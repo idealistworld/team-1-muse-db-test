@@ -1,4 +1,3 @@
-````
 # Project Name: Muse - Team 1
 
 ## Database Design
@@ -61,7 +60,3 @@ python3 test_connection.py
 When prompted, choose:
 - `y` to run authenticated tests (uses credentials from `.env`)
 - `n` to run anonymous tests only
-
-```
-
-```
