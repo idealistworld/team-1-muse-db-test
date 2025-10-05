@@ -8,6 +8,8 @@ load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
+TEST_USER_EMAIL = os.getenv("TEST_USER_EMAIL")
+TEST_USER_PASSWORD = os.getenv("TEST_USER_PASSWORD")
 
 # Initialize the Supabase client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -17,23 +19,27 @@ print("=" * 60)
 print()
 
 # Ask if user wants to authenticate
-print("🔐 Do you want to test with authentication? (y/n): ", end="")
+print("🔐 Run tests with authentication? (y/n): ", end="")
 auth_choice = input().strip().lower()
 
 authenticated_user_id = None
 if auth_choice == "y":
-    email = input("Email: ").strip()
-    password = input("Password: ").strip()
-    try:
-        auth_response = supabase.auth.sign_in_with_password({"email": email, "password": password})
-        authenticated_user_id = auth_response.user.id
-        print(f"✅ Authenticated as: {auth_response.user.email}")
-        print(f"   User ID: {authenticated_user_id}")
-        print()
-    except Exception as e:
-        print(f"❌ Authentication failed: {e}")
+    # Use credentials from .env
+    if not TEST_USER_EMAIL or not TEST_USER_PASSWORD:
+        print("❌ TEST_USER_EMAIL and TEST_USER_PASSWORD not set in .env")
         print("Continuing as anonymous...")
         print()
+    else:
+        try:
+            auth_response = supabase.auth.sign_in_with_password({"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD})
+            authenticated_user_id = auth_response.user.id
+            print(f"✅ Authenticated as: {auth_response.user.email}")
+            print(f"   User ID: {authenticated_user_id}")
+            print()
+        except Exception as e:
+            print(f"❌ Authentication failed: {e}")
+            print("Continuing as anonymous...")
+            print()
 else:
     print("⚠️  Running tests as anonymous user")
     print()
@@ -165,6 +171,9 @@ print("-" * 60)
 try:
     response = supabase.table(tables[0]).select("*").limit(1).execute()
     print(f"✅ PASSED - Connected to Supabase successfully")
+    print(f"   Raw response object: {response}")
+    print(f"   Response.data: {response.data}")
+    print(f"   Response.count: {response.count}")
     print()
 except Exception as e:
     print(f"❌ FAILED - {e}")
@@ -177,8 +186,11 @@ for table in tables[:3]:
     try:
         response = supabase.table(table).select("*").limit(1).execute()
         print(f"✅ PASSED - Can read from '{table}' ({len(response.data)} rows)")
+        print(f"   Raw response: {response}")
+        print(f"   Response.data: {response.data}")
     except Exception as e:
         print(f"❌ FAILED - '{table}': {str(e)[:80]}")
+        print(f"   Full error: {e}")
 print()
 
 # TEST 3: Write Operations
@@ -191,6 +203,8 @@ for table in tables[:1]:  # Just test first table
         if test_data:
             response = supabase.table(table).insert(test_data).execute()
             print(f"✅ PASSED - Insert to '{table}' succeeded")
+            print(f"   Raw insert response: {response}")
+            print(f"   Response.data: {response.data}")
 
             # Show the inserted record as proof
             if response.data and len(response.data) > 0:
@@ -216,8 +230,11 @@ for table in tables[:1]:  # Just test first table
                     try:
                         delete_response = supabase.table(table).delete().eq(pk_field, pk_value).execute()
                         print(f"   🧹 Deleted test record (confirmed cleanup)")
+                        print(f"   Raw delete response: {delete_response}")
+                        print(f"   Delete response.data: {delete_response.data}")
                     except Exception as cleanup_error:
                         print(f"   ⚠️  Cleanup failed: {str(cleanup_error)[:60]}")
+                        print(f"   Cleanup error: {cleanup_error}")
         else:
             print(f"⚠️  SKIPPED - '{table}': No schema found")
     except Exception as e:
@@ -225,14 +242,17 @@ for table in tables[:1]:  # Just test first table
         if "row-level security" in error_msg.lower() or "permission denied" in error_msg.lower():
             if auth_choice == "y":
                 print(f"⚠️  BLOCKED - '{table}': RLS blocked authenticated write (check policies)")
+                print(f"   Full error response: {error_msg}")
             else:
                 print(f"✅ PASSED - '{table}': RLS blocked anonymous write (expected)")
+                print(f"   DB error response: {error_msg}")
         elif "check constraint" in error_msg.lower():
             print(f"❌ FAILED - '{table}': Check constraint violation")
             print(f"   Full error: {error_msg}")
             print(f"   Generated data: {test_data}")
         else:
             print(f"❌ FAILED - '{table}': {error_msg[:80]}")
+            print(f"   Full error: {error_msg}")
 print()
 
 # TEST 4: RLS Protection
@@ -246,14 +266,20 @@ for table in tables[:1]:  # Just test first table
         response = supabase.table(table).select("*").execute()
         if auth_choice == "y":
             print(f"✅ PASSED - '{table}': Authenticated read returned {len(response.data)} rows")
+            print(f"   Raw response: {response}")
+            print(f"   Response.data: {response.data[:2] if len(response.data) > 1 else response.data}")
         else:
             print(f"✅ PASSED - '{table}': Anonymous read returned {len(response.data)} rows (RLS filtering applied)")
+            print(f"   Raw response: {response}")
+            print(f"   Response.data: {response.data[:2] if len(response.data) > 1 else response.data}")
     except Exception as e:
         error_msg = str(e)
         if "row-level security" in error_msg.lower() or "permission denied" in error_msg.lower():
             print(f"✅ PASSED - '{table}': RLS blocking reads (very restrictive)")
+            print(f"   Error: {error_msg}")
         else:
             print(f"❌ FAILED - '{table}': {error_msg[:80]}")
+            print(f"   Full error: {error_msg}")
 print()
 
 # TEST 5: Joins Work
@@ -274,13 +300,14 @@ for main_table, related_table, description in join_tests:
             # Supabase join syntax: table1.select('*, table2(*)')
             response = supabase.table(main_table).select(f"*, {related_table}(*)").limit(1).execute()
             print(f"✅ PASSED - {description}")
-            if response.data:
-                print(f"   Retrieved {len(response.data)} joined record(s)")
+            print(f"   Retrieved {len(response.data)} joined record(s)")
+            print(f"   Full join response: {response.data}")
             join_passed = True
             break
         except Exception as e:
             error_msg = str(e)
             print(f"⚠️  {description} - {error_msg[:80]}")
+            print(f"   Full error: {error_msg}")
             continue
 
 if not join_passed:
