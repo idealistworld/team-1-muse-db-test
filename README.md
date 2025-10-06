@@ -7,20 +7,29 @@ Table containing constraints, pk, fk, etc. extra information
 
 https://docs.google.com/spreadsheets/d/1CksnrYIqFs90kd9xkaRTjEDNLkYb8VTkrjm9DpjtiEo/edit?gid=2144144581#gid=2144144581
 
-Primary Keys
+Keys & Constraints
 
-UUID: User-owned tables (user_profiles, user_posts, user_media, user_follows)
-BIGINT IDENTITY: Catalog/ingest tables (creator_profiles, creator_content, post_inspirations)
+**Primary Keys**
 
-Timestamps
+UUIDs → Used on all user-owned tables (user_profiles, user_posts, user_media, user_follows) for secure, client-generated IDs and simpler RLS.
 
-touch_updated_at() trigger auto-updates updated_at on every modification
+BIGINT IDENTITY → Used on catalog/ingest tables (creator_profiles, creator_content, post_inspirations) for efficient ingestion, compact indexing, and performance at scale.
 
-Constraints
+**Timestamps**
 
-subscription_tier: Enum restricted to free or pro
-Case-insensitive uniqueness: (LOWER(platform), LOWER(profile_url)) on creators
-Unique constraints prevent duplicates: (user_id, creator_id), (post_id, content_id)
+Every table has created_at and updated_at. A touch_updated_at() trigger automatically refreshes updated_at on any modification, ensuring lifecycle accuracy without extra app logic.
+
+**Constraints & Uniqueness**
+
+subscription_tier is restricted to free or pro (enum-style check).
+
+Creator profiles are case-insensitive unique on (LOWER(platform), LOWER(profile_url)).
+
+Linking tables enforce uniqueness:
+
+(user_id, creator_id) in user_follows → no duplicate follows.
+
+(post_id, content_id) in post_inspirations → no duplicate inspiration links.
 
 ### Overview
 Muse is a tool that helps users craft more engaging LinkedIn posts by analyzing trending creator content, identifying effective patterns, and suggesting improvements. It looks at tone, structure, hashtags, and engagement hooks from the people you follow—then applies those insights to your own drafts.
