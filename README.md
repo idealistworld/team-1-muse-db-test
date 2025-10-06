@@ -2,9 +2,25 @@
 
 ## Database Design
 
+
 Table containing constraints, pk, fk, etc. extra information
 
 https://docs.google.com/spreadsheets/d/1CksnrYIqFs90kd9xkaRTjEDNLkYb8VTkrjm9DpjtiEo/edit?gid=2144144581#gid=2144144581
+
+Primary Keys
+
+UUID: User-owned tables (user_profiles, user_posts, user_media, user_follows)
+BIGINT IDENTITY: Catalog/ingest tables (creator_profiles, creator_content, post_inspirations)
+
+Timestamps
+
+touch_updated_at() trigger auto-updates updated_at on every modification
+
+Constraints
+
+subscription_tier: Enum restricted to free or pro
+Case-insensitive uniqueness: (LOWER(platform), LOWER(profile_url)) on creators
+Unique constraints prevent duplicates: (user_id, creator_id), (post_id, content_id)
 
 ### Overview
 Muse is a tool that helps users craft more engaging LinkedIn posts by analyzing trending creator content, identifying effective patterns, and suggesting improvements. It looks at tone, structure, hashtags, and engagement hooks from the people you follow—then applies those insights to your own drafts.
