@@ -2,7 +2,6 @@
 
 ## Database Design
 
-
 Table containing constraints, pk, fk, etc. extra information
 
 https://docs.google.com/spreadsheets/d/1CksnrYIqFs90kd9xkaRTjEDNLkYb8VTkrjm9DpjtiEo/edit?gid=2144144581#gid=2144144581
@@ -34,6 +33,7 @@ Linking tables enforce uniqueness:
 (post_id, content_id) in post_inspirations → no duplicate inspiration links.
 
 ### Overview
+
 Muse is a tool that helps users craft more engaging LinkedIn posts by analyzing trending creator content, identifying effective patterns, and suggesting improvements. It looks at tone, structure, hashtags, and engagement hooks from the people you follow—then applies those insights to your own drafts.
 
 What the Database Does
@@ -47,7 +47,6 @@ Creator catalog – Profiles and posts from LinkedIn creators that Muse ingests 
 Social graph – Who follows whom, linking users to the creators they care about.
 
 Inspiration links – A special table that ties a user’s draft post to the creator content that inspired it, giving transparency and context.
-
 
 ### Entity Relationship Diagram
 
@@ -163,19 +162,6 @@ Our RLS policies are built around two core principles:
 
 ## Setup Instructions
 
-### Prerequisites
-
-- Python 3.10+
-- Supabase account
-- pip (Python package manager)
-- Relevant libraries:
-  - `supabase` - Supabase Python client
-  - `python-dotenv` - Environment variable management
-  - `httpx` - HTTP client for API requests
-  - `postgrest` - Turns PostgreSQL database into instant REST API
-
-### Installation
-
 1. Install required packages:
 
 ```bash
@@ -198,6 +184,17 @@ SUPABASE_ANON_KEY=your-anon-key-here
 TEST_USER_EMAIL=your-test-email@example.com
 TEST_USER_PASSWORD=your-test-password
 ```
+
+### Prerequisites
+
+- Python 3.10+
+- Supabase account
+- pip (Python package manager)
+- Relevant libraries:
+  - `supabase` - Supabase Python client
+  - `python-dotenv` - Environment variable management
+  - `httpx` - HTTP client for API requests
+  - `postgrest` - Turns PostgreSQL database into instant REST API
 
 ### Running the test scripts
 
