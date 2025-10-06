@@ -172,13 +172,14 @@ Our RLS policies are built around two core principles:
   - `supabase` - Supabase Python client
   - `python-dotenv` - Environment variable management
   - `httpx` - HTTP client for API requests
+  - `postgrest` - Turns PostgreSQL database into instant REST API
 
 ### Installation
 
 1. Install required packages:
 
 ```bash
-pip install supabase python-dotenv httpx
+pip install supabase python-dotenv httpx postgrest
 ```
 
 2. Copy `.env.example` to `.env` and configure:
