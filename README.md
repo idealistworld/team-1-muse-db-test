@@ -7,13 +7,15 @@ Table containing constraints, pk, fk, etc. extra information
 
 https://docs.google.com/spreadsheets/d/1CksnrYIqFs90kd9xkaRTjEDNLkYb8VTkrjm9DpjtiEo/edit?gid=2144144581#gid=2144144581
 
-Keys & Constraints
-
 **Primary Keys**
 
-UUIDs → Used on all user-owned tables (user_profiles, user_posts, user_media, user_follows) for secure, client-generated IDs and simpler RLS.
+UUIDs on all user-owned tables (user_profiles, user_posts, user_media, user_follows).
 
-BIGINT IDENTITY → Used on catalog/ingest tables (creator_profiles, creator_content, post_inspirations) for efficient ingestion, compact indexing, and performance at scale.
+BIGINT IDENTITY on catalog/ingest tables (creator_profiles, creator_content, post_inspirations).
+
+**Foreign Keys**
+
+All relationship columns (e.g. user_id, creator_id, post_id, content_id) are foreign keys with cascading deletes to maintain referential integrity.
 
 **Timestamps**
 
