@@ -75,7 +75,52 @@ Brief description of your data model and why it supports your application.
 
 ### Security Model
 
-Explanation of your RLS policies and access control strategy.
+Our RLS policies are built around two core principles:
+
+1. **Authentication Required**: All data access requires a signed-in user. This is a private platform for solopreneurs managing their content workflow—not a public site. Anonymous users get nothing.
+
+2. **Users Own Their Rows**: Once authenticated, users can only read/write rows they own. This prevents any user from tampering with another user's profiles, posts, media, follows, or inspirations.
+
+#### Detailed Policy Breakdown
+
+**user_profiles**
+
+- **SELECT** (`user_profiles_select_self`): `user_id = auth.uid()` - Users can only view their own profile, preventing PII leakage across accounts
+- **INSERT** (`user_profiles_insert_self`): WITH CHECK ensures `user_id = auth.uid()` - Users can only create their own profile, blocks forging profiles for other users
+- **UPDATE** (`user_profiles_update_self`): Both USING and WITH CHECK verify `user_id = auth.uid()` - Prevents ownership flips during updates (can't change your profile to belong to someone else)
+- **DELETE** (`user_profiles_delete_self`): `user_id = auth.uid()` - Users can only delete their own profile
+
+**user_posts**
+
+- **SELECT** (`user_posts_select_own`): `user_id = auth.uid()` - Scopes posts to owner, nobody sees another user's drafts
+- **INSERT** (`user_posts_insert_self`): WITH CHECK `user_id = auth.uid()` - Posts must be attributed to the creator
+- **UPDATE** (`user_posts_update_own`): Both checks prevent reassigning posts to different users mid-update
+- **DELETE** (`user_posts_delete_own`): `user_id = auth.uid()` - Only owner can delete their posts
+
+**user_media**
+
+- **SELECT** (`user_media_select_via_post`): `EXISTS (SELECT 1 FROM user_posts p WHERE p.post_id = user_media.post_id AND p.user_id = auth.uid())` - Media viewable only if parent post belongs to requesting user
+- **INSERT** (`user_media_insert_via_post`): WITH CHECK validates ownership through parent post - Prevents attaching media to other users' posts
+- **UPDATE** (`user_media_update_via_post`): Both USING and WITH CHECK verify ownership - Media must stay attached to your own post
+- **DELETE** (`user_media_delete_via_post`): Verified through parent post ownership
+
+**user_follows**
+
+- **SELECT** (`user_follows_select_self`): `user_id = auth.uid()` - Users only see their own follow graph
+- **INSERT** (`user_follows_insert_self`): WITH CHECK `user_id = auth.uid()` - Can only follow creators as yourself, prevents forging follow rows for others
+- **DELETE** (`user_follows_delete_self`): `user_id = auth.uid()` - Can only unfollow from your own rows
+
+**post_inspirations**
+
+- **SELECT** (`post_insp_select_via_post`): `EXISTS` check through `user_posts` - Only view inspirations for your own posts
+- **INSERT** (`post_insp_insert_via_post`): WITH CHECK validates post ownership - Prevents linking someone else's post to creator content
+- **DELETE** (`post_insp_delete_via_post`): Verified through parent post ownership
+
+**creator_profiles** & **creator_content**
+
+- **All Operations**: Require `auth.role() = 'authenticated'`
+- Prevents anonymous scraping of the creator directory
+- All authenticated users can currently add/edit. We might want to allows users to upload content they find online manually, but this is subject to change.
 
 ## Setup Instructions
 
